@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"target": "es2020",
+		"alwaysStrict": true,
+		"strict": true,
+		"preserveConstEnums": false,
+		"sourceMap": false,
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"rootDir": "src",
+		"outDir": "dist",
+		"incremental": true
+	},
+	"exclude": ["node_modules"]
+}
