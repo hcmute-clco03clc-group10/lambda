@@ -6,13 +6,16 @@ function readRecursively(src) {
 	const dirs = [src];
 	while (dirs.length) {
 		const shifted = dirs.shift();
+		if (path.basename(shifted) === 'shared') {
+			continue;
+		}
 		for (const i of readdirSync(shifted)) {
-			const p = path.resolve(shifted, i);
-			const stats = statSync(p);
+			const resolved = path.resolve(shifted, i);
+			const stats = statSync(resolved);
 			if (stats.isDirectory()) {
-				dirs.push(p);
-			} else if (p.endsWith('.ts')) {
-				files.push(p);
+				dirs.push(resolved);
+			} else if (resolved.endsWith('.ts')) {
+				files.push(resolved);
 			}
 		}
 	}
