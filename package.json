@@ -7,8 +7,8 @@
 	"author": "SAM CLI",
 	"license": "MIT",
 	"scripts": {
-		"build": "tsc",
-		"watch": "tsc --watch"
+		"build": "esbuild src/**/*.ts --bundle --minify --platform=node --outdir=dist",
+		"dev": "esbuild src/**/*.ts --bundle --platform=node --outdir=dist --watch"
 	},
 	"devDependencies": {
 		"@types/aws-lambda": "^8.10.92",
