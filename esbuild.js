@@ -31,7 +31,7 @@ require('esbuild').build({
 	outdir: 'dist',
 	platform: 'node',
 	watch: process.argv.includes('--watch'),
-	entryPoints: readRecursively(path.resolve(__dirname, 'src'))
+	entryPoints: readRecursively(path.resolve(__dirname, 'src')),
 }).then(e => {
 	console.log('build result:', e);
 });

@@ -1,7 +1,8 @@
 const path = require('path');
 const { readdirSync, statSync } = require('fs');
-const { spawn } = require('node:child_process');
 const { execSync } = require('node:child_process');
+
+console.log(process.argv);
 
 function globDirs(src) {
 	const dirs = [];
@@ -17,7 +18,9 @@ function globDirs(src) {
 
 const dist = path.resolve(__dirname, 'dist');
 for(const dir of globDirs(dist)) {
-	execSync(`cd ${dist} && 7z a -tzip ${path.basename(dir)}.zip ${dir}/*`, {
+	const basename = path.basename(dir);
+	console.log(`> zip ${basename}`);
+	execSync(`cd ${dist} && 7z a -tzip ${basename}.zip ${dir}/*`, {
 		cwd: dir
 	});
 }
