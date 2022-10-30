@@ -1,46 +1,50 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { makeProjectedPayload } from '../shared/payload';
 import { makeAccessToken, makeRefreshToken } from '../shared/token';
 
 const POST = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
 	if (!event.body) {
 		return {
-			statusCode: 403,
+			statusCode: 400,
 			body: ''
 		};
 	}
 
-	// TODO: if authenticated.
+	const body = JSON.parse(event.body);
+	if (!body.username || !body.password) {
+		return {
+			statusCode: 400,
+			body: ''
+		};
+	}
+	// TODO: do authentication.
 
-	const payload = Object.assign(
-		JSON.parse(event.body, (key, value) => {
-			return key === 'username' ? value : undefined;
-		}),
-		{ _id: '' }
-	);
+	body._id = '_id';
+	const payload = makeProjectedPayload(body);
 	const refreshToken = makeRefreshToken(payload);
 	const accessToken = makeAccessToken(payload);
 	return {
 		statusCode: 200,
 		body: '',
 		multiValueHeaders: {
-			'Set-Cookie': [`refreshToken=${refreshToken}`, `accessToken=${accessToken}`],
+			'Set-Cookie': [`refreshToken=${refreshToken}`, `accessToken=${accessToken}`]
 		},
 		headers: {
-			httpOnly: true,
-			secure: true,
-			path: '/'
+			'HttpOnly': true,
+			'Secure': true,
+			'Path': '/'
 		}
 	};
 }
 
-export const lambdaHandler = async (
+export const handler = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
 	if (event.httpMethod === 'POST') {
 		return POST(event);
 	}
 	return {
-		statusCode: 403,
+		statusCode: 400,
 		body: ''
 	};
 };
