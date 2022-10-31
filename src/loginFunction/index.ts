@@ -25,14 +25,15 @@ const POST = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
 	const accessToken = makeAccessToken(payload);
 	return {
 		statusCode: 200,
-		body: '',
+		body: 'Logged in successfully.',
 		multiValueHeaders: {
 			'Set-Cookie': [`refreshToken=${refreshToken}`, `accessToken=${accessToken}`]
 		},
 		headers: {
 			'HttpOnly': true,
 			'Secure': true,
-			'Path': '/'
+			'Path': '/',
+			'Content-Type': 'text/plain'
 		}
 	};
 }
