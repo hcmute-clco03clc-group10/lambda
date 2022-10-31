@@ -2,8 +2,6 @@ const path = require('path');
 const { readdirSync, statSync } = require('fs');
 const { execSync } = require('node:child_process');
 
-console.log(process.argv);
-
 function globDirs(src) {
 	const dirs = [];
 	for (const i of readdirSync(src)) {
