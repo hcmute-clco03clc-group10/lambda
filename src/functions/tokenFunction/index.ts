@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { makeAccessToken, verify } from '../shared/token';
+import { makeAccessToken, verify } from '../../shared/token';
 
 const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const [err, decoded] = await verify(event);
