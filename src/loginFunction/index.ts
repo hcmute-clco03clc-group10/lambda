@@ -1,14 +1,15 @@
-import { APIGatewayEventRequestContext, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { makeProjectedPayload } from '../shared/payload';
 import { makeAccessToken, makeRefreshToken } from '../shared/token';
 import * as AWS from 'aws-sdk';
+import { makeHash, verify } from '../shared/pbkdf2';
 
-AWS.config.update({ region: 'us-east-1' });
 const ddc = new AWS.DynamoDB.DocumentClient({
-	apiVersion: '2012-08-10'
+	apiVersion: '2012-08-10',
+	region: 'us-east-1'
 });
 
-const POST = async (event: APIGatewayProxyEvent, context: APIGatewayEventRequestContext): Promise<APIGatewayProxyResult> => {
+const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
 		return {
 			statusCode: 400,
@@ -28,6 +29,7 @@ const POST = async (event: APIGatewayProxyEvent, context: APIGatewayEventRequest
 		TableName: 'users',
 		IndexName: 'usernameIndex',
 		KeyConditionExpression: 'username = :username',
+		ProjectionExpression: 'password, salt',
 		ExpressionAttributeValues: {
 			':username': body.username
 		},
@@ -46,7 +48,15 @@ const POST = async (event: APIGatewayProxyEvent, context: APIGatewayEventRequest
 			body: 'Bad credentials, login failed.'
 		}
 	}
-	// TODO: verify password.
+
+	const item = res.Items![0];
+	const ok = await verify(body.password, item.salt, item.password);
+	if (!ok) {
+		return {
+			statusCode: 406,
+			body: 'Bad credentials, login failed.'
+		}
+	}
 
 	body._id = '_id';
 	const payload = makeProjectedPayload(body);
@@ -68,11 +78,10 @@ const POST = async (event: APIGatewayProxyEvent, context: APIGatewayEventRequest
 }
 
 export const handler = async (
-	event: APIGatewayProxyEvent,
-	context: APIGatewayEventRequestContext
+	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
 	if (event.httpMethod === 'POST') {
-		return POST(event, context);
+		return POST(event);
 	}
 	return {
 		statusCode: 400,
