@@ -1,8 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { makeProjectedPayload } from '../../shared/payload';
-import { makeAccessToken, makeRefreshToken } from '../../shared/token';
+import { makeProjectedPayload } from 'shared/payload';
+import { makeAccessToken, makeRefreshToken } from 'shared/token';
 import * as AWS from 'aws-sdk';
-import { verify } from '../../shared/pbkdf2';
+import { verify } from 'shared/pbkdf2';
 
 const ddc = new AWS.DynamoDB.DocumentClient({
 	apiVersion: '2012-08-10',

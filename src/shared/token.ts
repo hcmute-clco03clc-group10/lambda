@@ -29,7 +29,7 @@ export const verify = async (event: APIGatewayProxyEvent) => {
 			return;
 		}
 
-		jwt.verify(splitted[1], accessSecret, (err, decoded) => {
+		jwt.verify(splitted[1], refreshSecret, (err, decoded) => {
 			if (err) {
 				console.log(err);
 			}

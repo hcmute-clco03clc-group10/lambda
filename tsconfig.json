@@ -13,7 +13,11 @@
 		"rootDir": "src",
 		"outDir": "dist",
 		"incremental": true,
-		"typeRoots": ["@types"]
+		"typeRoots": ["@types"],
+		"baseUrl": ".",
+		"paths": {
+			"*": ["src/*"]
+		}
 	},
 	"exclude": ["node_modules"]
 }
