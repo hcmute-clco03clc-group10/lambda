@@ -1,5 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { makeProjectedPayload, Payload } from 'shared/payload';
 import { makeAccessToken, verify } from 'shared/token';
+import type { JwtPayload } from 'jsonwebtoken';
 
 const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const [err, decoded] = await verify(event);
@@ -13,7 +15,7 @@ const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> 
 		statusCode: 200,
 		body: 'New access token granted.',
 		headers: {
-			'Set-Cookie': `accessToken=${makeAccessToken(decoded!)}`,
+			'Set-Cookie': `accessToken=${makeAccessToken(makeProjectedPayload(decoded as Payload & JwtPayload))}`,
 			'HttpOnly': true,
 			'Secure': true,
 			'Path': '/'
