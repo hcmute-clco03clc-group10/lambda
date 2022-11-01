@@ -23,15 +23,16 @@ function readRecursively(src) {
 }
 
 require('esbuild').build({
-	target: 'es2020',
 	format: 'cjs',
 	bundle: true,
 	tsconfig: 'tsconfig.json',
 	sourcemap: 'inline',
 	outdir: 'dist',
 	platform: 'node',
+	minify: !process.argv.includes('--watch'),
 	watch: process.argv.includes('--watch'),
 	entryPoints: readRecursively(path.resolve(__dirname, 'src')),
+	external: ['aws-sdk', 'nock', 'mock-aws-s3']
 }).then(e => {
 	console.log('build result:', e);
 });
