@@ -14,7 +14,7 @@ function globDirs(src) {
 	return dirs;
 }
 
-const dist = path.resolve(__dirname, 'dist');
+const dist = path.resolve(__dirname, 'dist/functions');
 const argv = process.argv.slice(2);
 const dirs = argv.length
 	? globDirs(dist).filter(dir => argv.includes(path.basename(dir)))

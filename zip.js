@@ -14,7 +14,7 @@ function globDirs(src) {
 	return dirs;
 }
 
-const dist = path.resolve(__dirname, 'dist');
+const dist = path.resolve(__dirname, 'dist/functions');
 for(const dir of globDirs(dist)) {
 	const basename = path.basename(dir);
 	console.log(`> zip ${basename}`);
