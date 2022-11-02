@@ -19,6 +19,15 @@ export const usersSchema: AWS.DynamoDB.CreateTableInput = {
 				ProjectionType: 'INCLUDE',
 				NonKeyAttributes: [ 'password', 'salt' ]
 			}
+		},
+		{
+			IndexName: 'emailIndex',
+			KeySchema: [{ AttributeName: 'email', KeyType: 'HASH' }],
+			ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
+			Projection: {
+				ProjectionType: 'INCLUDE',
+				NonKeyAttributes: [ 'password', 'salt' ]
+			}
 		}
 	],
 	ProvisionedThroughput: {
