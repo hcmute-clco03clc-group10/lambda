@@ -9,8 +9,8 @@
 	"scripts": {
 		"build": "node esbuild.js",
 		"dev": "node esbuild.js --watch",
-		"zip": "node zip.js",
-		"deploy": "npm run build && npm run zip && node deploy.js"
+		"zip": "node dist/scripts/zipFunctions.js",
+		"deploy": "npm run build && npm run zip && node dist/scripts/deployLambdaFunctions.js"
 	},
 	"devDependencies": {
 		"@types/aws-lambda": "^8.10.92",
