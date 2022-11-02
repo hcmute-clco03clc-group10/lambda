@@ -2,7 +2,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { globDirs } from 'shared/glob';
 
-const dist = path.resolve(__dirname, 'dist/functions');
+const dist = path.resolve('dist/functions');
 for(const dir of globDirs(dist)) {
 	const basename = path.basename(dir);
 	console.log(`> zip ${basename}`);
