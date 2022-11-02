@@ -18,18 +18,29 @@ export const makeRefreshToken = (payload: string | object | Buffer) => {
 
 export const verify = async (event: APIGatewayProxyEvent) => {
 	return new Promise<[jwt.VerifyErrors | null, string | jwt.JwtPayload | undefined]>(resolve => {
-		const header = event.headers['Authorization'];
-		if (!header) {
-			resolve([new jwt.JsonWebTokenError("Missing Authorization header."), undefined]);
+		let token = event.headers['Authorization'];
+		if (!token) {
+			const cookie = event.headers['Cookie'];
+			if (cookie) {
+				token = cookie
+					.split(';')
+					.map(v => v.trimStart())
+					.find(v => v.startsWith('refreshToken='));
+				if (token) {
+					token = token.split('=', 2)[1];
+				}
+			}
+		} else {
+			const splitted = token.split(' ', 2);
+			if (splitted.length === 2 && splitted[0].toLowerCase() === 'bearer') {
+				token = splitted[1];
+			}
+		}
+		if (!token) {
+			resolve([new jwt.JsonWebTokenError("Missing refresh token."), undefined]);
 			return;
 		}
-		const splitted = header.split(' ', 2);
-		if (splitted.length !== 2 || splitted[0].toLowerCase() !== 'bearer') {
-			resolve([new jwt.JsonWebTokenError("Missing Bearer token."), undefined]);
-			return;
-		}
-
-		jwt.verify(splitted[1], refreshSecret, (err, decoded) => {
+		jwt.verify(token, refreshSecret, (err, decoded) => {
 			if (err) {
 				console.log(err);
 			}
