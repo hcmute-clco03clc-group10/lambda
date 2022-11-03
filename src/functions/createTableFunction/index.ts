@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { makeProjectedPayload } from 'shared/payload';
-import { makeAccessToken, makeRefreshToken, verifyAccessToken, verifyRefreshToken } from 'shared/token';
+import { makeAccessToken, makeRefreshToken, verifyAccessToken, verifyAccessTokenOrResign, verifyRefreshToken } from 'shared/token';
 import { verify } from 'shared/pbkdf2';
 import { ddc, ddb } from 'shared/dynamodb';
 import { TokenExpiredError } from 'jsonwebtoken';
@@ -25,14 +25,8 @@ const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> 
 		};
 	}
 
-	let [err, decoded] = await verifyAccessToken(event);
-	outer: if (err) {
-		if (err instanceof TokenExpiredError) {
-			[err, decoded] = await verifyRefreshToken(event);
-			if (!err) {
-				break outer;
-			}
-		}
+	let [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
+	if (err) {
 		return {
 			statusCode: 403,
 			body: "Unauthorized."
@@ -62,9 +56,9 @@ const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> 
 	return {
 		statusCode: 200,
 		body: JSON.stringify(TableDescription),
-		headers: {
-			'Content-Type': 'application/json'
-		}
+		headers: Object.assign({
+			'Content-Type': 'application/json',
+		}, setCookie)
 	}
 }
 

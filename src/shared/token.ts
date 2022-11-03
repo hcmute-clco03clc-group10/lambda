@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt, { JwtPayload, TokenExpiredError } from 'jsonwebtoken';
 import { Payload } from './payload';
 
 const refreshSecret = process.env.JWT_REFRESH_SECRET;
@@ -10,7 +10,6 @@ export const makeAccessToken = (payload: string | object | Buffer) => {
 		expiresIn: '15m'
 	});
 }
-
 export const makeRefreshToken = (payload: string | object | Buffer) => {
 	return jwt.sign(payload, refreshSecret, {
 		expiresIn: '30d'
@@ -25,8 +24,7 @@ export const verifyAccessToken = async (event: APIGatewayProxyEvent) => {
 			if (cookie) {
 				token = cookie
 					.split(';')
-					.map(v => v.trimStart())
-					.find(v => v.startsWith('accessToken='));
+					.find(v => v.trimStart().startsWith('accessToken='));
 				if (token) {
 					token = token.split('=', 2)[1];
 				}
@@ -41,10 +39,7 @@ export const verifyAccessToken = async (event: APIGatewayProxyEvent) => {
 			resolve([new jwt.JsonWebTokenError("Missing access token."), null!]);
 			return;
 		}
-		jwt.verify(token, accessSecret, (err, decoded) => {
-			if (err) {
-				console.log(err);
-			}
+		jwt.verify(token, accessSecret, async (err, decoded) => {
 			resolve([err, decoded as Payload]);
 		});
 	});
@@ -58,8 +53,7 @@ export const verifyRefreshToken = async (event: APIGatewayProxyEvent) => {
 			if (cookie) {
 				token = cookie
 					.split(';')
-					.map(v => v.trimStart())
-					.find(v => v.startsWith('refreshToken='));
+					.find(v => v.trimStart().startsWith('refreshToken='));
 				if (token) {
 					token = token.split('=', 2)[1];
 				}
@@ -79,6 +73,35 @@ export const verifyRefreshToken = async (event: APIGatewayProxyEvent) => {
 				console.log(err);
 			}
 			resolve([err, decoded as Payload]);
+		});
+	});
+}
+
+export const verifyAccessTokenOrResign= async (event: APIGatewayProxyEvent) => {
+	return new Promise<[jwt.VerifyErrors | null, Payload, { 'Set-Cookie': string } | undefined]>(resolve => {
+		let token: string | undefined;
+		const cookie = event.headers['Cookie'];
+		if (cookie) {
+			token = cookie
+				.split(';')
+				.find(v => v.trimStart().startsWith('accessToken='));
+			if (token) {
+				token = token.split('=', 2)[1];
+			}
+		}
+		if (!token) {
+			resolve([new jwt.JsonWebTokenError("Missing access token."), null!, undefined]);
+			return;
+		}
+		jwt.verify(token, accessSecret, async (err, decoded) => {
+			if (err instanceof TokenExpiredError) {
+				const [err, decoded] = await verifyAccessToken(event);
+				if (!err) {
+					resolve([err, decoded as Payload, { 'Set-Cookie': makeAccessToken(decoded) }]);
+					return;
+				}
+			}
+			resolve([err, decoded as Payload, undefined]);
 		});
 	});
 }
