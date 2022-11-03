@@ -1,10 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { makeProjectedPayload, Payload } from 'shared/payload';
-import { makeAccessToken, verifyRefreshToken } from 'shared/token';
-import type { JwtPayload } from 'jsonwebtoken';
+import { makeProjectedPayload } from 'shared/payload';
+import { extractToken, makeAccessToken, verifyRefreshToken } from 'shared/token';
 
 const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-	const [err, decoded] = await verifyRefreshToken(event);
+	const [err, decoded] = await verifyRefreshToken(extractToken(event, 'refreshToken'));
 	if (err) {
 		return {
 			statusCode: 400,
@@ -15,7 +14,7 @@ const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> 
 		statusCode: 200,
 		body: 'New access token granted.',
 		headers: {
-			'Set-Cookie': `accessToken=${makeAccessToken(makeProjectedPayload(decoded as Payload & JwtPayload))}`,
+			'Set-Cookie': `accessToken=${makeAccessToken(makeProjectedPayload(decoded))}`,
 			'HttpOnly': true,
 			'Secure': true,
 			'Path': '/'

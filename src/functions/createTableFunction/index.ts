@@ -1,9 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { makeProjectedPayload } from 'shared/payload';
-import { makeAccessToken, makeRefreshToken, verifyAccessToken, verifyAccessTokenOrResign, verifyRefreshToken } from 'shared/token';
-import { verify } from 'shared/pbkdf2';
-import { ddc, ddb } from 'shared/dynamodb';
-import { TokenExpiredError } from 'jsonwebtoken';
+import { verifyAccessTokenOrResign } from 'shared/token';
+import { ddb } from 'shared/dynamodb';
 
 const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
