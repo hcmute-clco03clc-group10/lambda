@@ -26,7 +26,7 @@ export const verifyAccessToken = async (event: APIGatewayProxyEvent) => {
 				token = cookie
 					.split(';')
 					.map(v => v.trimStart())
-					.find(v => v.startsWith('access='));
+					.find(v => v.startsWith('accessToken='));
 				if (token) {
 					token = token.split('=', 2)[1];
 				}
