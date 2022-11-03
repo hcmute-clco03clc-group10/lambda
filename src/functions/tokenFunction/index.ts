@@ -1,10 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { makeProjectedPayload, Payload } from 'shared/payload';
-import { makeAccessToken, verify } from 'shared/token';
+import { makeAccessToken, verifyRefreshToken } from 'shared/token';
 import type { JwtPayload } from 'jsonwebtoken';
 
 const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-	const [err, decoded] = await verify(event);
+	const [err, decoded] = await verifyRefreshToken(event);
 	if (err) {
 		return {
 			statusCode: 400,

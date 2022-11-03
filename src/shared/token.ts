@@ -16,7 +16,7 @@ export const makeRefreshToken = (payload: string | object | Buffer) => {
 	});
 }
 
-export const verify = async (event: APIGatewayProxyEvent) => {
+export const verifyRefreshToken = async (event: APIGatewayProxyEvent) => {
 	return new Promise<[jwt.VerifyErrors | null, string | jwt.JwtPayload | undefined]>(resolve => {
 		let token = event.headers['Authorization'];
 		if (!token) {
