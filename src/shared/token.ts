@@ -16,7 +16,7 @@ export const makeRefreshToken = (payload: string | object | Buffer) => {
 	});
 }
 
-export const verifyAccessToken = async (event: APIGatewayProxyEvent) => {
+export const verifyAccessToken = (event: APIGatewayProxyEvent) => {
 	return new Promise<[jwt.VerifyErrors | null, Payload]>(resolve => {
 		let token = event.headers['Authorization'];
 		if (!token) {
@@ -45,7 +45,7 @@ export const verifyAccessToken = async (event: APIGatewayProxyEvent) => {
 	});
 }
 
-export const verifyRefreshToken = async (event: APIGatewayProxyEvent) => {
+export const verifyRefreshToken = (event: APIGatewayProxyEvent) => {
 	return new Promise<[jwt.VerifyErrors | null, Payload]>(resolve => {
 		let token = event.headers['Authorization'];
 		if (!token) {
@@ -77,7 +77,7 @@ export const verifyRefreshToken = async (event: APIGatewayProxyEvent) => {
 	});
 }
 
-export const verifyAccessTokenOrResign= async (event: APIGatewayProxyEvent) => {
+export const verifyAccessTokenOrResign= (event: APIGatewayProxyEvent) => {
 	return new Promise<[jwt.VerifyErrors | null, Payload, { 'Set-Cookie': string } | undefined]>(resolve => {
 		let token: string | undefined;
 		const cookie = event.headers['Cookie'];
@@ -105,3 +105,25 @@ export const verifyAccessTokenOrResign= async (event: APIGatewayProxyEvent) => {
 		});
 	});
 }
+
+export const extractToken = (event: APIGatewayProxyEvent, key: string = '') => {
+	let token = event.headers['Authorization'];
+	if (!token) {
+		const cookie = event.headers['Cookie'];
+		if (cookie) {
+			token = cookie
+				.split(';')
+				.find(v => v.trimStart().startsWith(`${key}=`));
+			if (token) {
+				token = token.split('=', 2)[1];
+			}
+		}
+	} else {
+		const splitted = token.split(' ', 2);
+		if (splitted.length === 2 && splitted[0].toLowerCase() === 'bearer') {
+			token = splitted[1];
+		}
+	}
+	return token;
+}
+
