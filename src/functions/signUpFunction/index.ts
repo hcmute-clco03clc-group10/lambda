@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { put } from 'shared/dynamodb/users';
+import { ddc } from 'shared/dynamodb';
 
 const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
@@ -15,6 +16,36 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 			statusCode: 400,
 			body: 'Missing credentials.'
 		};
+	}
+
+	const queries = await Promise.all([
+		ddc.query({
+			TableName: 'users',
+			IndexName: 'usernameIndex',
+			KeyConditionExpression: 'username = :username',
+			Limit: 1,
+			Select: 'COUNT',
+			ExpressionAttributeValues: {
+				':username': body.username,
+			},
+		}).promise(),
+		ddc.query({
+			TableName: 'users',
+			IndexName: 'emailIndex',
+			KeyConditionExpression: 'email = :email',
+			Limit: 1,
+			Select: 'COUNT',
+			ExpressionAttributeValues: {
+				':email': body.email
+			},
+		}).promise(),
+	]);
+
+	if (queries.some(v => v.Count)) {
+		return {
+			statusCode: 400,
+			body: 'Username or email was used.'
+		}
 	}
 
 	const res = await put(body.username, body.email, body.password);
