@@ -74,11 +74,5 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 export const handler = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-	if (event.httpMethod === 'POST') {
-		return POST(event);
-	}
-	return {
-		statusCode: 400,
-		body: ''
-	};
+	return POST(event);
 };

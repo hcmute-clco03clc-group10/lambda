@@ -1,13 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { makeProjectedPayload } from 'shared/payload';
 import { makeAccessToken, makeRefreshToken } from 'shared/token';
-import * as AWS from 'aws-sdk';
 import { verify } from 'shared/pbkdf2';
-
-const ddc = new AWS.DynamoDB.DocumentClient({
-	apiVersion: '2012-08-10',
-	region: 'us-east-1'
-});
+import { ddc } from 'shared/dynamodb';
 
 const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
@@ -81,11 +76,5 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 export const handler = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-	if (event.httpMethod === 'POST') {
-		return POST(event);
-	}
-	return {
-		statusCode: 400,
-		body: ''
-	};
+	return POST(event);
 };

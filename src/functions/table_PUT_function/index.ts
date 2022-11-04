@@ -110,3 +110,9 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}
 }
 
+
+export const handler = async (
+	event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+	return PUT(event);
+};

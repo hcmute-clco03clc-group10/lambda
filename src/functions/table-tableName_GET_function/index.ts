@@ -45,3 +45,9 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}
 }
 
+
+export const handler = async (
+	event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+	return GET(event);
+}

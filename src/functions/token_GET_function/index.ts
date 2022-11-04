@@ -25,11 +25,5 @@ const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> 
 export const handler = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-	if (event.httpMethod === 'GET') {
-		return GET(event);
-	}
-	return {
-		statusCode: 403,
-		body: ''
-	};
+	return GET(event);
 };
