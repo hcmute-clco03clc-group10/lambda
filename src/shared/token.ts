@@ -1,13 +1,13 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import jwt, { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
-import { Payload } from './payload';
+import { makeProjectedPayload, Payload } from './payload';
 
 const refreshSecret = process.env.JWT_REFRESH_SECRET;
 const accessSecret = process.env.JWT_ACCESS_SECRET;
 
 export const makeAccessToken = (payload: string | object | Buffer) => {
 	return jwt.sign(payload, accessSecret, {
-		expiresIn: '15m'
+		expiresIn: '5s'
 	});
 }
 export const makeRefreshToken = (payload: string | object | Buffer) => {
@@ -37,7 +37,7 @@ export const verifyToken = (token: string | undefined, secret: string) => {
 }
 
 export const verifyAccessTokenOrResign = (event: APIGatewayProxyEvent) => {
-	return new Promise<[jwt.VerifyErrors | null, Payload, { 'Set-Cookie': string } | undefined]>(resolve => {
+	return new Promise<[jwt.VerifyErrors | null, Payload, { 'Set-Cookie': string, 'Path': string } | undefined]>(resolve => {
 		const token = extractToken(event, 'accessToken');
 		if (!token) {
 			resolve([new JsonWebTokenError('Missing token.'), null!, undefined])
@@ -47,7 +47,7 @@ export const verifyAccessTokenOrResign = (event: APIGatewayProxyEvent) => {
 			if (err instanceof TokenExpiredError) {
 				const [err, decoded] = await verifyRefreshToken(extractToken(event, 'refreshToken'));
 				if (!err) {
-					resolve([err, decoded as Payload, { 'Set-Cookie': `accessToken=${makeAccessToken(decoded)}` }]);
+					resolve([err, decoded as Payload, { 'Set-Cookie': `accessToken=${makeAccessToken(makeProjectedPayload(decoded))}`, Path: '/' }]);
 					return;
 				}
 			}
