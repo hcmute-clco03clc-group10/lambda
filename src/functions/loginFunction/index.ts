@@ -29,7 +29,8 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 		TableName: 'users',
 		IndexName: 'usernameIndex',
 		KeyConditionExpression: 'username = :username',
-		ProjectionExpression: 'password, salt',
+		Select: 'SPECIFIC_ATTRIBUTES',
+		ProjectionExpression: 'id, username, salt, password',
 		ExpressionAttributeValues: {
 			':username': body.username
 		},
@@ -44,7 +45,7 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 	}
 	if (res.Count !== 1) {
 		return {
-			statusCode: 406,
+			statusCode: 400,
 			body: 'Bad credentials, login failed.'
 		}
 	}
@@ -53,12 +54,12 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 	const ok = await verify(body.password, item.salt, item.password);
 	if (!ok) {
 		return {
-			statusCode: 406,
+			statusCode: 400,
 			body: 'Bad credentials, login failed.'
 		}
 	}
 
-	body._id = '_id';
+	body.id = item.id;
 	const payload = makeProjectedPayload(body);
 	const refreshToken = makeRefreshToken(payload);
 	const accessToken = makeAccessToken(payload);

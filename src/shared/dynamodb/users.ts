@@ -11,7 +11,7 @@ export const put = async (username: string, email: string, password: string) => 
 	return ddc.put({
 		TableName: 'users',
 		Item: {
-			_id: crypto.randomUUID(),
+			id: crypto.randomUUID(),
 			username,
 			email,
 			salt,
