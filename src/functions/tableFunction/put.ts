@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
-import { ddb } from 'shared/dynamodb';
+import { ddb, ddc } from 'shared/dynamodb';
 
 export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
@@ -29,6 +29,53 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 			body: "Unauthorized."
 		}
 	}
+	// decoded = {
+	// 	id: '304865d3-c2ec-491b-9d61-0f1c1e4bd1ec',
+	// 	username: 'test2'
+	// }
+
+	const get = await ddc.get({
+		TableName: 'users',
+		Key: {
+			id: decoded.id,
+			username: decoded.username
+		},
+		ProjectionExpression: "tables"
+	}).promise();
+
+	if (get.$response.error) {
+		return {
+			statusCode: 400,
+			body: get.$response.error.message
+		};
+	}
+
+	const tables = get.Item!.tables?.values as string[] | undefined;
+	if (tables && tables.includes(body.tableName)) {
+		return {
+			statusCode: 400,
+			body: 'Table already existed.'
+		};
+	}
+
+	const update = await ddc.update({
+		TableName: 'users',
+		Key: {
+			id: decoded.id,
+			username: decoded.username
+		},
+		UpdateExpression: 'ADD tables :table',
+		ExpressionAttributeValues: {
+			':table': ddc.createSet([body.tableName])
+		},
+	}).promise();
+
+	if (update.$response.error) {
+		return {
+			statusCode: 400,
+			body: update.$response.error.message
+		}
+	}
 
 	const keySchemas = [{ AttributeName: body.partitionKey, KeyType: 'HASH' }];
 	const attributeDefinitions = [{ AttributeName: body.partitionKey, AttributeType: body.partitionKeyType }];
@@ -38,9 +85,13 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}
 
 	const { $response, TableDescription } = await ddb.createTable({
-		TableName: `${decoded._id}_body.tableName`,
+		TableName: `${decoded.id}_${body.tableName}`,
 		KeySchema: keySchemas,
-		AttributeDefinitions: attributeDefinitions
+		AttributeDefinitions: attributeDefinitions,
+		ProvisionedThroughput: {
+			ReadCapacityUnits: 5,
+			WriteCapacityUnits: 5
+		}
 	}).promise();
 
 	if ($response.error) {
@@ -52,7 +103,7 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 
 	return {
 		statusCode: 200,
-		body: JSON.stringify(TableDescription),
+		body: TableDescription!.TableStatus!,
 		headers: Object.assign({
 			'Content-Type': 'application/json',
 		}, setCookie)
