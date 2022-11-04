@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddb } from 'shared/dynamodb';
 
-const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
 		return {
 			statusCode: 400,
@@ -59,14 +59,3 @@ const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> 
 	}
 }
 
-export const handler = async (
-	event: APIGatewayProxyEvent
-): Promise<APIGatewayProxyResult> => {
-	if (event.httpMethod === 'PUT') {
-		return PUT(event);
-	}
-	return {
-		statusCode: 400,
-		body: ''
-	};
-};
