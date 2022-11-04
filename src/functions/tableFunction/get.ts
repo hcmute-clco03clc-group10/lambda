@@ -39,7 +39,9 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	return {
 		statusCode: 200,
 		body: JSON.stringify(tables),
-		headers: Object.assign({}, setCookie)
+		headers: Object.assign({
+			'Content-Type': 'application/json'
+		}, setCookie)
 	}
 }
 
