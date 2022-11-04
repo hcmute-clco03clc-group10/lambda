@@ -3,7 +3,7 @@ import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddc } from 'shared/dynamodb';
 
 export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-	let [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
+	const [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
 	if (err) {
 		return {
 			statusCode: 403,

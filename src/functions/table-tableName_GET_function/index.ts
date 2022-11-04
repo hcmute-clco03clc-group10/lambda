@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddc } from 'shared/dynamodb';
+import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 
 export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const tableName = event.pathParameters?.tableName;
@@ -11,34 +12,69 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 		};
 	}
 
-	let [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
+	const [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
 	if (err) {
 		return {
 			statusCode: 403,
-			body: 'Unauthorized.'
+			body: 'Unauthorized.',
+			headers: {
+				'Content-Type': 'text/plain'
+			},
 		}
 	}
 
-	const res = await ddc.get({
+	const query = await ddc.query({
 		TableName: 'users',
-		Key: {
-			id: decoded.id,
-			username: decoded.username
+		KeyConditionExpression: 'id = :id',
+		FilterExpression: 'contains(tables, :tableName)',
+		ExpressionAttributeValues: {
+			':id': decoded.id,
+			':tableName': tableName
 		},
-		ProjectionExpression: 'tables'
+		Select: 'ALL_ATTRIBUTES',
 	}).promise();
 
-	if(res.$response.error) {
+	if (query.$response.error) {
 		return {
 			statusCode: 400,
-			body: res.$response.error.message
+			body: query.$response.error.message,
+			headers: {
+				'Content-Type': 'text/plain'
+			},
 		}
 	}
-	
-	const tables = res.Item!.tables?.values || [] as string[];
+
+	if (!query.Count) {
+		return {
+			statusCode: 404,
+			body: 'Table not found.',
+			headers: {
+				'Content-Type': 'text/plain'
+			},
+		}
+	}
+
+	let lastEvaluatedKey: DocumentClient.Key | undefined;
+	const items = [];
+	do {
+		const get = await ddc.scan({
+			TableName: `${decoded.id}_${tableName}`,
+			Limit: 25,
+			ExclusiveStartKey: lastEvaluatedKey
+		}).promise();
+		if (get.$response.error) {
+			return {
+				statusCode: 500,
+				body: get.$response.error.message
+			}
+		}
+		items.push(...get.Items!);
+		lastEvaluatedKey = get.LastEvaluatedKey;
+	} while (lastEvaluatedKey);
+
 	return {
 		statusCode: 200,
-		body: JSON.stringify(tables),
+		body: JSON.stringify(items),
 		headers: Object.assign({
 			'Content-Type': 'application/json'
 		}, setCookie)
