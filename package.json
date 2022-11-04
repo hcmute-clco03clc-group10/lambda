@@ -10,7 +10,8 @@
 		"build": "node esbuild.js",
 		"dev": "node esbuild.js --watch",
 		"zip": "node dist/scripts/zipFunctions.js",
-		"deploy": "npm run build && npm run zip && node dist/scripts/deployLambdaFunctions.js"
+		"deploy": "npm run build && npm run zip && node dist/scripts/deployLambdaFunctions.js",
+		"env": "node dist/scripts/configureLambdaEnv.js"
 	},
 	"devDependencies": {
 		"@types/aws-lambda": "^8.10.92",
