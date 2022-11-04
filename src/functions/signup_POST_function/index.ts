@@ -63,7 +63,7 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 		}
 	}
 	return {
-		statusCode: 200,
+		statusCode: 201,
 		body: 'Signed up successfully.',
 		headers: {
 			'Content-Type': 'text/plain'

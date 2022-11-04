@@ -102,7 +102,7 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}
 
 	return {
-		statusCode: 200,
+		statusCode: 201,
 		body: TableDescription!.TableStatus!,
 		headers: Object.assign({
 			'Content-Type': 'application/json',
