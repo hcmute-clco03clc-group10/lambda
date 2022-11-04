@@ -3,12 +3,13 @@ import * as AWS from 'aws-sdk';
 export const usersSchema: AWS.DynamoDB.CreateTableInput = {
 	TableName: 'users',
 	KeySchema: [
-		{ AttributeName: '_id', KeyType: 'HASH' },
+		{ AttributeName: 'id', KeyType: 'HASH' },
 		{ AttributeName: 'username', KeyType: 'RANGE' },
 	],
 	AttributeDefinitions: [
-		{ AttributeName: '_id', AttributeType: 'S' },
+		{ AttributeName: 'id', AttributeType: 'S' },
 		{ AttributeName: 'username', AttributeType: 'S' },
+		{ AttributeName: 'email', AttributeType: 'S' },
 	],
 	GlobalSecondaryIndexes: [
 		{
@@ -17,7 +18,7 @@ export const usersSchema: AWS.DynamoDB.CreateTableInput = {
 			ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
 			Projection: {
 				ProjectionType: 'INCLUDE',
-				NonKeyAttributes: [ 'password', 'salt' ]
+				NonKeyAttributes: [ 'id', 'email', 'password', 'salt' ]
 			}
 		},
 		{
@@ -26,7 +27,7 @@ export const usersSchema: AWS.DynamoDB.CreateTableInput = {
 			ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
 			Projection: {
 				ProjectionType: 'INCLUDE',
-				NonKeyAttributes: [ 'password', 'salt' ]
+				NonKeyAttributes: [ 'id', 'username', 'password', 'salt' ]
 			}
 		}
 	],
