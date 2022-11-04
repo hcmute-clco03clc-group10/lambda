@@ -14,7 +14,7 @@ function readRecursively(src) {
 			const stats = statSync(resolved);
 			if (stats.isDirectory()) {
 				dirs.push(resolved);
-			} else if (resolved.endsWith('.ts')) {
+			} else if (resolved.endsWith('index.ts')) {
 				files.push(resolved);
 			}
 		}
