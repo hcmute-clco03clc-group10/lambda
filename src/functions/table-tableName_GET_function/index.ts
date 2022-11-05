@@ -31,7 +31,7 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 			':id': decoded.id,
 			':tableName': tableName
 		},
-		Select: 'ALL_ATTRIBUTES',
+		Select: 'COUNT',
 	}).promise();
 
 	if (query.$response.error) {
