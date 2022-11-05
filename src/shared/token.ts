@@ -37,7 +37,7 @@ export const verifyToken = (token: string | undefined, secret: string) => {
 }
 
 export const verifyAccessTokenOrResign = (event: APIGatewayProxyEvent) => {
-	return new Promise<[jwt.VerifyErrors | null, Payload, { 'Set-Cookie': string, 'Path': string } | undefined]>(resolve => {
+	return new Promise<[jwt.VerifyErrors | null, Payload, { [key in 'Set-Cookie' | 'HttpOnly' | 'Secure' | 'Path']: string | boolean } | undefined]>(resolve => {
 		const token = extractToken(event, 'accessToken');
 		if (!token) {
 			resolve([new JsonWebTokenError('Missing token.'), null!, undefined])
@@ -47,7 +47,12 @@ export const verifyAccessTokenOrResign = (event: APIGatewayProxyEvent) => {
 			if (err instanceof TokenExpiredError) {
 				const [err, decoded] = await verifyRefreshToken(extractToken(event, 'refreshToken'));
 				if (!err) {
-					resolve([err, decoded as Payload, { 'Set-Cookie': `accessToken=${makeAccessToken(makeProjectedPayload(decoded))}`, Path: '/' }]);
+					resolve([err, decoded as Payload, {
+						'Set-Cookie': `accessToken=${makeAccessToken(makeProjectedPayload(decoded))}`,
+						'HttpOnly': true,
+						'Secure': true,
+						'Path': '/',
+					}]);
 					return;
 				}
 			}
