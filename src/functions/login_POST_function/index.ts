@@ -3,21 +3,16 @@ import { makeProjectedPayload } from 'shared/payload';
 import { makeAccessToken, makeRefreshToken } from 'shared/token';
 import { verify } from 'shared/pbkdf2';
 import { ddc } from 'shared/dynamodb';
+import * as http from 'shared/http';
 
 const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
-		return {
-			statusCode: 400,
-			body: ''
-		};
+		return http.respond.text(400, 'Missing credentials.');
 	}
 
 	const body = JSON.parse(event.body);
 	if (!body.username || !body.password) {
-		return {
-			statusCode: 400,
-			body: ''
-		};
+		return http.respond.text(400, 'Missing credentials.');
 	}
 
 	const res = await ddc.query({
@@ -33,31 +28,23 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 	}).promise();
 
 	if (res.$response.error) {
-		return {
-			statusCode: 500,
-			body: res.$response.error.message
-		}
+		return http.respond.error(500, res.$response.error);
 	}
 	if (res.Count !== 1) {
-		return {
-			statusCode: 400,
-			body: 'Bad credentials, login failed.'
-		}
+		return http.respond.text(400, 'Bad credentials, login failed.');
 	}
 
 	const item = res.Items![0];
 	const ok = await verify(body.password, item.salt, item.password);
 	if (!ok) {
-		return {
-			statusCode: 400,
-			body: 'Bad credentials, login failed.'
-		}
+		return http.respond.text(400, 'Bad credentials, login failed.');
 	}
 
 	body.id = item.id;
 	const payload = makeProjectedPayload(body);
 	const refreshToken = makeRefreshToken(payload);
 	const accessToken = makeAccessToken(payload);
+
 	return {
 		statusCode: 200,
 		body: 'Logged in successfully.',

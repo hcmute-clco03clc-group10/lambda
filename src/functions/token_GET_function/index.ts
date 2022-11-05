@@ -1,25 +1,19 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { makeProjectedPayload } from 'shared/payload';
 import { extractToken, makeAccessToken, verifyRefreshToken } from 'shared/token';
+import * as http from 'shared/http';
 
 const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const [err, decoded] = await verifyRefreshToken(extractToken(event, 'refreshToken'));
 	if (err) {
-		return {
-			statusCode: 400,
-			body: err.message
-		}
+		return http.respond.error(400, err);
 	}
-	return {
-		statusCode: 200,
-		body: 'New access token granted.',
-		headers: {
-			'Set-Cookie': `accessToken=${makeAccessToken(makeProjectedPayload(decoded))}`,
-			'HttpOnly': true,
-			'Secure': true,
-			'Path': '/'
-		}
-	};
+	return http.respond.text(200, 'New access token granted.', {
+		'Set-Cookie': `accessToken=${makeAccessToken(makeProjectedPayload(decoded))}`,
+		'HttpOnly': true,
+		'Secure': true,
+		'Path': '/'
+	});
 }
 
 export const handler = async (

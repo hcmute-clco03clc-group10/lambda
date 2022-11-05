@@ -1,14 +1,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddc } from 'shared/dynamodb';
+import * as http from 'shared/http';
 
 export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
 	if (err) {
-		return {
-			statusCode: 403,
-			body: 'Unauthorized.'
-		}
+		return http.respond.unauthorized();
 	}
 
 	const res = await ddc.get({
@@ -21,20 +19,11 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}).promise();
 
 	if(res.$response.error) {
-		return {
-			statusCode: 400,
-			body: res.$response.error.message
-		}
+		return http.respond.error(400, res.$response.error);
 	}
 	
 	const tables = res.Item!.tables?.values || [] as string[];
-	return {
-		statusCode: 200,
-		body: JSON.stringify(tables),
-		headers: Object.assign({
-			'Content-Type': 'application/json'
-		}, setCookie)
-	}
+	return http.respond.json(200, tables, setCookie);
 }
 
 export const handler = async (

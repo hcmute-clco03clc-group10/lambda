@@ -1,8 +1,6 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
+import * as http from 'shared/http';
 
 export const handler = async (): Promise<APIGatewayProxyResult> => {
-	return {
-		statusCode: 200,
-		body: '/v1 API stage.'
-	};
+	return http.respond.text(200, '/v1 API.');
 };

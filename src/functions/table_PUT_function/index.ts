@@ -1,13 +1,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddb, ddc } from 'shared/dynamodb';
+import * as http from 'shared/http';
 
 export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
-		return {
-			statusCode: 400,
-			body: 'Missing form data.'
-		};
+		return http.respond.text(400, 'Missing form data.');
 	}
 
 	const body = JSON.parse(event.body);
@@ -16,23 +14,13 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 		|| !body.partitionKeyType
 		|| body.provisionedReadCapacity == null
 		|| body.provisionedWriteCapacity == null) {
-		return {
-			statusCode: 400,
-			body: 'Missing form data.'
-		};
+		return http.respond.text(400, 'Missing form data.');
 	}
 
 	let [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
 	if (err) {
-		return {
-			statusCode: 403,
-			body: "Unauthorized."
-		}
+		return http.respond.unauthorized();
 	}
-	// decoded = {
-	// 	id: '304865d3-c2ec-491b-9d61-0f1c1e4bd1ec',
-	// 	username: 'test2'
-	// }
 
 	const get = await ddc.get({
 		TableName: 'users',
@@ -44,18 +32,12 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}).promise();
 
 	if (get.$response.error) {
-		return {
-			statusCode: 400,
-			body: get.$response.error.message
-		};
+		return http.respond.error(400, get.$response.error);
 	}
 
 	const tables = get.Item!.tables?.values as string[] | undefined;
 	if (tables && tables.includes(body.tableName)) {
-		return {
-			statusCode: 400,
-			body: 'Table already existed.'
-		};
+		return http.respond.text(400, 'Table already existed.');
 	}
 
 	const update = await ddc.update({
@@ -71,10 +53,7 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}).promise();
 
 	if (update.$response.error) {
-		return {
-			statusCode: 400,
-			body: update.$response.error.message
-		}
+		return http.respond.error(400, update.$response.error);
 	}
 
 	const keySchemas = [{ AttributeName: body.partitionKey, KeyType: 'HASH' }];
@@ -84,7 +63,7 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 		attributeDefinitions.push({ AttributeName: body.sortKey, AttributeType: body.sortKeyType });
 	}
 
-	const { $response, TableDescription } = await ddb.createTable({
+	const create = await ddb.createTable({
 		TableName: `${decoded.id}_${body.tableName}`,
 		KeySchema: keySchemas,
 		AttributeDefinitions: attributeDefinitions,
@@ -94,20 +73,10 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 		}
 	}).promise();
 
-	if ($response.error) {
-		return {
-			statusCode: 500,
-			body: $response.error.message
-		}
+	if (create.$response.error) {
+		return http.respond.error(400, create.$response.error);
 	}
-
-	return {
-		statusCode: 201,
-		body: TableDescription!.TableStatus!,
-		headers: Object.assign({
-			'Content-Type': 'application/json',
-		}, setCookie)
-	}
+	return http.respond.text(201, create.TableDescription!.TableStatus!, setCookie);
 }
 
 

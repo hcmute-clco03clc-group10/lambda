@@ -2,25 +2,17 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddc } from 'shared/dynamodb';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
+import * as http from 'shared/http';
 
 export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 	const tableName = event.pathParameters?.tableName;
 	if (!tableName) {
-		return {
-			statusCode: 400,
-			body: 'Missing table name.'
-		};
+		return http.respond.text(400, 'Missing table name.');
 	}
 
 	const [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
 	if (err) {
-		return {
-			statusCode: 403,
-			body: 'Unauthorized.',
-			headers: {
-				'Content-Type': 'text/plain'
-			},
-		}
+		return http.respond.unauthorized();
 	}
 
 	const query = await ddc.query({
@@ -35,23 +27,11 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}).promise();
 
 	if (query.$response.error) {
-		return {
-			statusCode: 400,
-			body: query.$response.error.message,
-			headers: {
-				'Content-Type': 'text/plain'
-			},
-		}
+		return http.respond.error(400, query.$response.error);
 	}
 
 	if (!query.Count) {
-		return {
-			statusCode: 404,
-			body: 'Table not found.',
-			headers: {
-				'Content-Type': 'text/plain'
-			},
-		}
+		return http.respond.text(404, 'Table not found.');
 	}
 
 	let lastEvaluatedKey: DocumentClient.Key | undefined;
@@ -63,22 +43,13 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 			ExclusiveStartKey: lastEvaluatedKey
 		}).promise();
 		if (get.$response.error) {
-			return {
-				statusCode: 500,
-				body: get.$response.error.message
-			}
+			return http.respond.error(500, get.$response.error);
 		}
 		items.push(...get.Items!);
 		lastEvaluatedKey = get.LastEvaluatedKey;
 	} while (lastEvaluatedKey);
 
-	return {
-		statusCode: 200,
-		body: JSON.stringify(items),
-		headers: Object.assign({
-			'Content-Type': 'application/json'
-		}, setCookie)
-	}
+	return http.respond.json(200, items, setCookie);
 }
 
 
