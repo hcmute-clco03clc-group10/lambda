@@ -1,4 +1,4 @@
-import { APIGatewayProxyResult } from "aws-lambda";
+import { APIGatewayProxyResult } from 'aws-lambda';
 
 type Header = Omit<{ [key: string]: string | number | boolean }, 'Content-Type'>;
 type MultiValueHeader = Omit<{ [key: string]: string | number | boolean | string[] }, 'Content-Type'>;
@@ -13,7 +13,7 @@ const corsHeaders = {
 export const respond = {
 	text: (statusCode: number, body: string, header?: MultiValueHeader): APIGatewayProxyResult => {
 		const multiValueHeaders: { [key: string]: string[] } = {};
-		for(const k in header) {
+		for (const k in header) {
 			if (Array.isArray(header[k])) {
 				multiValueHeaders[k] = (header as MultiValueHeader)[k] as string[];
 				delete header[k];
@@ -30,7 +30,7 @@ export const respond = {
 			body = JSON.stringify(body);
 		}
 		const multiValueHeaders: { [key: string]: string[] } = {};
-		for(const k in header) {
+		for (const k in header) {
 			if (Array.isArray(header[k])) {
 				multiValueHeaders[k] = (header as MultiValueHeader)[k] as string[];
 				delete header[k];
