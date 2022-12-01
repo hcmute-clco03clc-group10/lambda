@@ -45,19 +45,13 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 	const refreshToken = makeRefreshToken(payload);
 	const accessToken = makeAccessToken(payload);
 
-	return {
-		statusCode: 200,
-		body: 'Logged in successfully.',
-		multiValueHeaders: {
-			'Set-Cookie': [`refreshToken=${refreshToken}`, `accessToken=${accessToken}`]
-		},
-		headers: {
-			'HttpOnly': true,
-			'Secure': true,
-			'Path': '/',
-			'Content-Type': 'text/plain'
-		}
-	};
+	return http.respond.text(200, 'Logged in successfully', {
+		'HttpOnly': true,
+		'Secure': true,
+		'Path': '/',
+		'Content-Type': 'text/plain',
+		'Set-Cookie': [`refreshToken=${refreshToken}`, `accessToken=${accessToken}`]
+	})
 }
 
 export const handler = async (
