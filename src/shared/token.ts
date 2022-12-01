@@ -62,9 +62,9 @@ export const verifyAccessTokenOrResign = (event: APIGatewayProxyEvent) => {
 }
 
 export const extractToken = (event: APIGatewayProxyEvent, key: 'refreshToken' | 'accessToken') => {
-	let token = event.headers['Authorization'];
+	let token = event.headers.authorization;
 	if (!token) {
-		const cookie = event.headers['Cookie'];
+		const cookie = event.headers.cookie;
 		if (cookie) {
 			token = cookie
 				.split(';')
