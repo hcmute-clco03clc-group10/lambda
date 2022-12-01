@@ -23,7 +23,10 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 	}
 	
 	const tables = res.Item!.tables?.values || [] as string[];
-	return http.respond.json(200, tables, setCookie);
+	return http.respond.json(200, tables, {
+		'Access-Control-Allow-Origin': event.headers.origin!,
+		...setCookie
+	});
 }
 
 export const handler = async (

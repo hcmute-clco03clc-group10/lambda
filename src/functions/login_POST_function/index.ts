@@ -45,12 +45,13 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 	const refreshToken = makeRefreshToken(payload);
 	const accessToken = makeAccessToken(payload);
 
-	return http.respond.text(200, 'Logged in successfully', {
+	return http.respond.text(200, `Logged in successfully`, {
 		'HttpOnly': true,
 		'Secure': true,
 		'Path': '/',
 		'Content-Type': 'text/plain',
-		'Set-Cookie': [`refreshToken=${refreshToken}`, `accessToken=${accessToken}`]
+		'Set-Cookie': [`refreshToken=${refreshToken}; SameSite=None; Secure`, `accessToken=${accessToken}; SameSite=None; Secure`],
+		'Access-Control-Allow-Origin': event.headers.origin!,
 	})
 }
 
