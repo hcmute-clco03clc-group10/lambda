@@ -26,7 +26,7 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 		TableName: 'users',
 		Key: {
 			id: decoded.id,
-			username: decoded.username
+			email: decoded.email
 		},
 		ProjectionExpression: "tables"
 	}).promise();
@@ -44,7 +44,7 @@ export const PUT = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 		TableName: 'users',
 		Key: {
 			id: decoded.id,
-			username: decoded.username
+			email: decoded.email
 		},
 		UpdateExpression: 'ADD tables :table',
 		ExpressionAttributeValues: {

@@ -9,38 +9,26 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 	}
 
 	const body = JSON.parse(event.body);
-	if (!body.username || !body.email || !body.password) {
+	if (!body.email || !body.password) {
 		return http.respond.text(400, 'Missing credentials.');
 	}
 
-	const queries = await Promise.all([
-		ddc.query({
-			TableName: 'users',
-			IndexName: 'usernameIndex',
-			KeyConditionExpression: 'username = :username',
-			Limit: 1,
-			Select: 'COUNT',
-			ExpressionAttributeValues: {
-				':username': body.username,
-			},
-		}).promise(),
-		ddc.query({
-			TableName: 'users',
-			IndexName: 'emailIndex',
-			KeyConditionExpression: 'email = :email',
-			Limit: 1,
-			Select: 'COUNT',
-			ExpressionAttributeValues: {
-				':email': body.email
-			},
-		}).promise(),
-	]);
+	const query = await ddc.query({
+		TableName: 'users',
+		IndexName: 'emailIndex',
+		KeyConditionExpression: 'email = :email',
+		Limit: 1,
+		Select: 'COUNT',
+		ExpressionAttributeValues: {
+			':email': body.email
+		},
+	}).promise();
 
-	if (queries.some(v => v.Count)) {
-		return http.respond.text(400, 'Username or email is already in used.');
+	if (query.Count) {
+		return http.respond.text(400, 'Email is already in used.');
 	}
 
-	const res = await put(body.username, body.email, body.password);
+	const res = await put(body.email, body.password);
 	if (res.$response.error) {
 		return http.respond.error(500, res.$response.error);
 	}

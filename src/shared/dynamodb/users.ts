@@ -5,7 +5,7 @@ import type { PromiseResult } from 'aws-sdk/lib/request';
 import type { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import type { AWSError } from 'aws-sdk';
 
-export const put = async (username: string, email: string, password: string) => {
+export const put = async (email: string, password: string) => {
 	const salt = makeSalt();
 	const [err, hash] = await makeHash(password, salt);
 	if (err) {
@@ -19,7 +19,6 @@ export const put = async (username: string, email: string, password: string) => 
 		TableName: 'users',
 		Item: {
 			id: crypto.randomUUID(),
-			username,
 			email,
 			salt,
 			password: hash,

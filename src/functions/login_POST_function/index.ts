@@ -11,18 +11,18 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 	}
 
 	const body = JSON.parse(event.body);
-	if (!body.username || !body.password) {
+	if (!body.email || !body.password) {
 		return http.respond.text(400, 'Missing credentials.');
 	}
 
 	const res = await ddc.query({
 		TableName: 'users',
-		IndexName: 'usernameIndex',
-		KeyConditionExpression: 'username = :username',
+		IndexName: 'emailIndex',
+		KeyConditionExpression: 'email = :email',
 		Select: 'SPECIFIC_ATTRIBUTES',
-		ProjectionExpression: 'id, username, salt, password',
+		ProjectionExpression: 'id, email, salt, password',
 		ExpressionAttributeValues: {
-			':username': body.username
+			':email': body.email
 		},
 		Limit: 1
 	}).promise();

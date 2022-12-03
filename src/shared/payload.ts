@@ -1,12 +1,12 @@
 export interface Payload {
 	id: string;
-	username: string;
+	email: string;
 }
 
 export const makeProjectedPayload = (obj: Payload & { [key: string]: any }): Payload => {
 	for(const key in obj) {
 		if (key === 'id'
-		|| key === 'username') {
+		|| key === 'email') {
 			continue;
 		}
 		delete obj[key];

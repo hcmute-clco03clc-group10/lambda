@@ -13,7 +13,7 @@ export const GET = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
 		TableName: 'users',
 		Key: {
 			id: decoded.id,
-			username: decoded.username
+			email: decoded.email
 		},
 		ProjectionExpression: 'tables'
 	}).promise();
