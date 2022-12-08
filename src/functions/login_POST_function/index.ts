@@ -5,7 +5,9 @@ import { verify } from 'shared/pbkdf2';
 import { ddc } from 'shared/dynamodb';
 import * as http from 'shared/http';
 
-const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+const POST = async (
+	event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
 		return http.respond.text(400, 'Missing credentials.');
 	}
@@ -15,17 +17,19 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 		return http.respond.text(400, 'Missing credentials.');
 	}
 
-	const res = await ddc.query({
-		TableName: 'users',
-		IndexName: 'emailIndex',
-		KeyConditionExpression: 'email = :email',
-		Select: 'SPECIFIC_ATTRIBUTES',
-		ProjectionExpression: 'id, email, salt, password',
-		ExpressionAttributeValues: {
-			':email': body.email
-		},
-		Limit: 1
-	}).promise();
+	const res = await ddc
+		.query({
+			TableName: 'users',
+			IndexName: 'emailIndex',
+			KeyConditionExpression: 'email = :email',
+			Select: 'SPECIFIC_ATTRIBUTES',
+			ProjectionExpression: 'id, email, salt, password',
+			ExpressionAttributeValues: {
+				':email': body.email,
+			},
+			Limit: 1,
+		})
+		.promise();
 
 	if (res.$response.error) {
 		return http.respond.error(500, res.$response.error);
@@ -46,14 +50,16 @@ const POST = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 	const accessToken = makeAccessToken(payload);
 
 	return http.respond.text(200, `Logged in successfully`, {
-		'HttpOnly': true,
-		'Secure': true,
-		'Path': '/',
+		HttpOnly: true,
+		Secure: true,
+		Path: '/',
 		'Content-Type': 'text/plain',
-		'Set-Cookie': [`refreshToken=${refreshToken}; SameSite=None; Secure`, `accessToken=${accessToken}; SameSite=None; Secure`],
-		'Access-Control-Allow-Origin': event.headers.origin!,
-	})
-}
+		'Set-Cookie': [
+			`refreshToken=${refreshToken}; SameSite=None; Secure`,
+			`accessToken=${accessToken}; SameSite=None; Secure`,
+		],
+	});
+};
 
 export const handler = async (
 	event: APIGatewayProxyEvent
