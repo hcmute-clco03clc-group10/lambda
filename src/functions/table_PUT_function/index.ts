@@ -38,8 +38,8 @@ export const PUT = async (
 		return http.respond.error(400, get.$response.error);
 	}
 
-	const tables = get.Item!.tables?.values as string[] | undefined;
-	if (tables && tables.includes(body.tableName)) {
+	const tables = get.Item!.tables as { name: string }[] | undefined;
+	if (tables && tables.some((v) => v.name === body.tableName)) {
 		return http.respond.text(400, 'Table already existed.');
 	}
 
@@ -47,10 +47,13 @@ export const PUT = async (
 		.update({
 			TableName: 'users',
 			Key: decoded,
-			UpdateExpression: 'ADD tables :table',
+			UpdateExpression:
+				'set tables = list_append(if_not_exists(tables, :empty), :table)',
 			ExpressionAttributeValues: {
-				':table': ddc.createSet([body.tableName]),
+				':table': [{ name: body.tableName }],
+				':empty': [],
 			},
+			ReturnValues: 'NONE',
 		})
 		.promise();
 
@@ -79,8 +82,8 @@ export const PUT = async (
 			KeySchema: keySchemas,
 			AttributeDefinitions: attributeDefinitions,
 			ProvisionedThroughput: {
-				ReadCapacityUnits: 5,
-				WriteCapacityUnits: 5,
+				ReadCapacityUnits: body.provisionedReadCapacity || 5,
+				WriteCapacityUnits: body.provisionedWriteCapacity || 5,
 			},
 		})
 		.promise();
