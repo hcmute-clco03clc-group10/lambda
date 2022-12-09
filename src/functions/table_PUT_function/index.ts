@@ -88,11 +88,7 @@ export const PUT = async (
 	if (create.$response.error) {
 		return http.respond.error(400, create.$response.error);
 	}
-	return http.respond.text(
-		201,
-		create.TableDescription!.TableStatus!,
-		setCookie
-	);
+	return http.respond.text(201, 'Table is now being created.', setCookie);
 };
 
 export const handler = async (
