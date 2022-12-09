@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
-import { ddc } from 'shared/dynamodb';
+import { ddb, ddc } from 'shared/dynamodb';
 import * as http from 'shared/http';
 
 export const GET = async (
@@ -10,20 +10,39 @@ export const GET = async (
 	if (err) {
 		return http.respond.unauthorized();
 	}
-
 	const res = await ddc
 		.get({
 			TableName: 'users',
-			Key: decoded,
+			Key: { id: decoded.id, email: decoded.email },
 			ProjectionExpression: 'tables',
 		})
 		.promise();
-
 	if (res.$response.error) {
 		return http.respond.error(400, res.$response.error, setCookie);
 	}
+	const tables = res.Item!.tables as UserTableAttributeItem[];
+	if (!tables) {
+		return http.respond.json(200, [], setCookie);
+	}
 
-	return http.respond.json(200, res.Item!.tables || [], setCookie);
+	const results = await Promise.all(
+		tables.map((table) =>
+			ddb
+				.describeTable({
+					TableName: `${decoded.id}_${table.name}`,
+				})
+				.promise()
+				.then((v) => v.Table)
+		)
+	);
+	for (const result of results) {
+		if (result) {
+			result.TableName = result.TableName!.substring(
+				result.TableName!.indexOf('_') + 1
+			);
+		}
+	}
+	return http.respond.json(200, results, setCookie);
 };
 
 export const handler = async (
