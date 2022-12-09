@@ -4,3 +4,7 @@ declare namespace NodeJS {
 		JWT_ACCESS_SECRET: string;
 	}
 }
+
+declare interface UserTableAttributeItem {
+	name: string;
+}
