@@ -20,11 +20,10 @@ export const GET = async (
 		.promise();
 
 	if (res.$response.error) {
-		return http.respond.error(400, res.$response.error);
+		return http.respond.error(400, res.$response.error, setCookie);
 	}
 
-	const tables = res.Item!.tables?.values || ([] as string[]);
-	return http.respond.json(200, tables, setCookie);
+	return http.respond.json(200, res.Item!.tables || [], setCookie);
 };
 
 export const handler = async (
