@@ -20,7 +20,7 @@ export const GET = async (
 	if (res.$response.error) {
 		return http.respond.error(400, res.$response.error, setCookie);
 	}
-	const tables = res.Item!.tables as UserTableAttributeItem[];
+	const tables = res.Item!.tables?.values as string[];
 	if (!tables) {
 		return http.respond.json(200, [], setCookie);
 	}
@@ -29,7 +29,7 @@ export const GET = async (
 		tables.map((table) =>
 			ddb
 				.describeTable({
-					TableName: `${decoded.id}_${table.name}`,
+					TableName: `${decoded.id}_${table}`,
 				})
 				.promise()
 				.then((v) => v.Table)

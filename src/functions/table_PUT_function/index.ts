@@ -29,7 +29,7 @@ export const PUT = async (
 	const get = await ddc
 		.get({
 			TableName: 'users',
-			Key: decoded,
+			Key: { id: decoded.id, email: decoded.email },
 			ProjectionExpression: 'tables',
 		})
 		.promise();
@@ -38,20 +38,18 @@ export const PUT = async (
 		return http.respond.error(400, get.$response.error);
 	}
 
-	const tables = get.Item!.tables as { name: string }[] | undefined;
-	if (tables && tables.some((v) => v.name === body.tableName)) {
+	const tables = get.Item!.tables?.values as string[] | undefined;
+	if (tables && tables.includes(body.tableName)) {
 		return http.respond.text(400, 'Table already existed.');
 	}
 
 	const update = await ddc
 		.update({
 			TableName: 'users',
-			Key: decoded,
-			UpdateExpression:
-				'set tables = list_append(if_not_exists(tables, :empty), :table)',
+			Key: { id: decoded.id, email: decoded.email },
+			UpdateExpression: 'add tables :table',
 			ExpressionAttributeValues: {
-				':table': [{ name: body.tableName }],
-				':empty': [],
+				':table': ddc.createSet([body.tableName]),
 			},
 			ReturnValues: 'NONE',
 		})
