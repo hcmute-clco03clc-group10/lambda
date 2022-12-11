@@ -14,7 +14,10 @@ function readRecursively(src) {
 			const stats = statSync(resolved);
 			if (stats.isDirectory()) {
 				dirs.push(resolved);
-			} else if (!resolved.includes('functions') || resolved.endsWith('index.ts')) {
+			} else if (
+				!resolved.includes('functions') ||
+				resolved.endsWith('index.ts')
+			) {
 				files.push(resolved);
 			}
 		}
@@ -22,17 +25,24 @@ function readRecursively(src) {
 	return files;
 }
 
-require('esbuild').build({
-	format: 'cjs',
-	bundle: true,
-	tsconfig: 'tsconfig.json',
-	sourcemap: 'inline',
-	outdir: 'dist',
-	platform: 'node',
-	minify: !process.argv.includes('--watch'),
-	watch: process.argv.includes('--watch'),
-	entryPoints: readRecursively(path.resolve(__dirname, 'src')),
-	external: ['aws-sdk', 'nock', 'mock-aws-s3']
-}).then(e => {
-	console.log('build result:', e);
-});
+require('esbuild')
+	.build({
+		format: 'cjs',
+		bundle: true,
+		tsconfig: 'tsconfig.json',
+		sourcemap: 'inline',
+		outdir: 'dist',
+		platform: 'node',
+		minify: !process.argv.includes('--watch'),
+		watch: process.argv.includes('--watch'),
+		entryPoints: readRecursively(path.resolve(__dirname, 'src')),
+		external: [
+			'aws-sdk',
+			'nock',
+			'mock-aws-s3',
+			'@aws-sdk/client-dynamodb',
+		],
+	})
+	.then((e) => {
+		console.log('build result:', e);
+	});
