@@ -105,5 +105,5 @@ const __error = (
 };
 
 const __unauthorized = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
-	return text(event, 403, 'Unauthorized.');
+	return __text(event, 403, 'Unauthorized.');
 };
