@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { makeProjectedPayload } from 'shared/payload';
 import {
 	extractToken,
@@ -14,9 +14,9 @@ const GET = async (
 		extractToken(event, 'refreshToken')
 	);
 	if (err) {
-		return http.respond.error(400, err);
+		return http.respond(event).error(400, err);
 	}
-	return http.respond.json(200, decoded, {
+	return http.respond(event).json(200, decoded, {
 		'Set-Cookie': `accessToken=${makeAccessToken(
 			makeProjectedPayload(decoded)
 		)}; SameSite=None; Secure`,

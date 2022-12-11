@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddb, ddc } from 'shared/dynamodb';
 import * as http from 'shared/http';
@@ -7,7 +7,7 @@ export const PUT = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
-		return http.respond.text(400, 'Missing form data.');
+		return http.respond(event).text(400, 'Missing form data.');
 	}
 
 	const body = JSON.parse(event.body);
@@ -18,12 +18,12 @@ export const PUT = async (
 		body.provisionedReadCapacity == null ||
 		body.provisionedWriteCapacity == null
 	) {
-		return http.respond.text(400, 'Missing form data.');
+		return http.respond(event).text(400, 'Missing form data.');
 	}
 
 	let [err, decoded, setCookie] = await verifyAccessTokenOrResign(event);
 	if (err) {
-		return http.respond.unauthorized();
+		return http.respond(event).unauthorized();
 	}
 
 	const get = await ddc
@@ -35,12 +35,12 @@ export const PUT = async (
 		.promise();
 
 	if (get.$response.error) {
-		return http.respond.error(400, get.$response.error);
+		return http.respond(event).error(400, get.$response.error);
 	}
 
 	const tables = get.Item!.tables?.values as string[] | undefined;
 	if (tables && tables.includes(body.tableName)) {
-		return http.respond.text(400, 'Table already existed.');
+		return http.respond(event).text(400, 'Table already existed.');
 	}
 
 	const update = await ddc
@@ -56,7 +56,7 @@ export const PUT = async (
 		.promise();
 
 	if (update.$response.error) {
-		return http.respond.error(400, update.$response.error);
+		return http.respond(event).error(400, update.$response.error);
 	}
 
 	const keySchemas = [{ AttributeName: body.partitionKey, KeyType: 'HASH' }];
@@ -87,9 +87,11 @@ export const PUT = async (
 		.promise();
 
 	if (create.$response.error) {
-		return http.respond.error(400, create.$response.error);
+		return http.respond(event).error(400, create.$response.error);
 	}
-	return http.respond.text(201, 'Table is now being created.', setCookie);
+	return http
+		.respond(event)
+		.text(201, 'Table is now being created.', setCookie);
 };
 
 export const handler = async (

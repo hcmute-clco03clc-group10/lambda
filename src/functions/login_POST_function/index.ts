@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { makeProjectedPayload } from 'shared/payload';
 import { makeAccessToken, makeRefreshToken } from 'shared/token';
 import { verify } from 'shared/pbkdf2';
@@ -9,12 +9,12 @@ const POST = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
-		return http.respond.text(400, 'Missing credentials.');
+		return http.respond(event).text(400, 'Missing credentials.');
 	}
 
 	const body = JSON.parse(event.body);
 	if (!body.email || !body.password) {
-		return http.respond.text(400, 'Missing credentials.');
+		return http.respond(event).text(400, 'Missing credentials.');
 	}
 
 	const res = await ddc
@@ -32,16 +32,16 @@ const POST = async (
 		.promise();
 
 	if (res.$response.error) {
-		return http.respond.error(500, res.$response.error);
+		return http.respond(event).error(500, res.$response.error);
 	}
 	if (res.Count !== 1) {
-		return http.respond.text(400, 'Bad credentials, login failed.');
+		return http.respond(event).text(400, 'Bad credentials, login failed.');
 	}
 
 	const item = res.Items![0];
 	const ok = await verify(body.password, item.salt, item.password);
 	if (!ok) {
-		return http.respond.text(400, 'Bad credentials, login failed.');
+		return http.respond(event).text(400, 'Bad credentials, login failed.');
 	}
 
 	body.id = item.id;
@@ -49,7 +49,7 @@ const POST = async (
 	const refreshToken = makeRefreshToken(payload);
 	const accessToken = makeAccessToken(payload);
 
-	return http.respond.text(200, `Logged in successfully`, {
+	return http.respond(event).text(200, `Logged in successfully`, {
 		HttpOnly: true,
 		Secure: true,
 		Path: '/',

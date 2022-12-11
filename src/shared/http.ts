@@ -1,4 +1,4 @@
-import { APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 type Header = Omit<
 	{ [key: string]: string | number | boolean },
@@ -16,73 +16,94 @@ const corsHeaders = {
 	'Access-Control-Allow-Credentials': 'true',
 };
 
-export const respond = {
-	text: (
-		statusCode: number,
-		body: string,
-		header?: MultiValueHeader
-	): APIGatewayProxyResult => {
-		const multiValueHeaders: { [key: string]: string[] } = {};
-		for (const k in header) {
-			if (Array.isArray(header[k])) {
-				multiValueHeaders[k] = (header as MultiValueHeader)[
-					k
-				] as string[];
-				delete header[k];
-			}
+export const respond = (event: APIGatewayProxyEvent) => {
+	return {
+		text: __text.bind(null, event),
+		json: __json.bind(null, event),
+		error: __error.bind(null, event),
+		unauthorized: __unauthorized.bind(null, event),
+	};
+};
+
+const __text = (
+	event: APIGatewayProxyEvent,
+	statusCode: number,
+	body: string,
+	header?: MultiValueHeader
+): APIGatewayProxyResult => {
+	const multiValueHeaders: { [key: string]: string[] } = {};
+	for (const k in header) {
+		if (Array.isArray(header[k])) {
+			multiValueHeaders[k] = (header as MultiValueHeader)[k] as string[];
+			delete header[k];
 		}
-		return {
-			statusCode,
-			body: body as string,
-			headers: Object.assign(
-				{ ...corsHeaders, 'Content-Type': 'text/plain' },
-				header
-			) as Header,
-			multiValueHeaders,
-		};
-	},
-	json: (
-		statusCode: number,
-		body: string | Object,
-		header?: MultiValueHeader
-	): APIGatewayProxyResult => {
-		if (body instanceof Object) {
-			body = JSON.stringify(body);
+	}
+	return {
+		statusCode,
+		body,
+		headers: Object.assign(
+			{
+				...corsHeaders,
+				'Content-Type': 'text/plain',
+				'Access-Control-Allow-Origin': event.headers.origin,
+			},
+			header
+		) as Header,
+		multiValueHeaders,
+	};
+};
+
+const __json = (
+	event: APIGatewayProxyEvent,
+	statusCode: number,
+	body: string | Object,
+	header?: MultiValueHeader
+): APIGatewayProxyResult => {
+	if (body instanceof Object) {
+		body = JSON.stringify(body);
+	}
+	const multiValueHeaders: { [key: string]: string[] } = {};
+	for (const k in header) {
+		if (Array.isArray(header[k])) {
+			multiValueHeaders[k] = (header as MultiValueHeader)[k] as string[];
+			delete header[k];
 		}
-		const multiValueHeaders: { [key: string]: string[] } = {};
-		for (const k in header) {
-			if (Array.isArray(header[k])) {
-				multiValueHeaders[k] = (header as MultiValueHeader)[
-					k
-				] as string[];
-				delete header[k];
-			}
-		}
-		return {
-			statusCode,
-			body: body as string,
-			headers: Object.assign(
-				{ ...corsHeaders, 'Content-Type': 'application/json' },
-				header as Header
-			),
-			multiValueHeaders,
-		};
-	},
-	error: (
-		statusCode: number,
-		error: Error,
-		header?: Header
-	): APIGatewayProxyResult => {
-		return {
-			statusCode,
-			body: `${error.name}: ${error.message}`,
-			headers: Object.assign(
-				{ ...corsHeaders, 'Content-Type': 'text/plain' },
-				header
-			),
-		};
-	},
-	unauthorized: (): APIGatewayProxyResult => {
-		return respond.text(403, 'Unauthorized.');
-	},
+	}
+	return {
+		statusCode,
+		body: body as string,
+		headers: Object.assign(
+			{
+				...corsHeaders,
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': event.headers.origin,
+			},
+			header as Header
+		),
+		multiValueHeaders,
+	};
+};
+
+const __error = (
+	event: APIGatewayProxyEvent,
+	statusCode: number,
+	error: Error,
+	header?: Header
+): APIGatewayProxyResult => {
+	return {
+		statusCode,
+		body: `${error.name}: ${error.message}`,
+		headers: Object.assign(
+			{
+				...corsHeaders,
+				'Content-Type': 'text/plain',
+				'Access-Control-Allow-Origin': event.headers.origin,
+			},
+			header
+		),
+	};
+};
+
+const __unauthorized = (event: APIGatewayProxyEvent): APIGatewayProxyResult => {
+	return text(event, 403, 'Unauthorized.');
 };
