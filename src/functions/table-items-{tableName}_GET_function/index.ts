@@ -1,8 +1,9 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
-import { ddc } from 'shared/dynamodb';
-import { DocumentClient } from 'aws-sdk/clients/dynamodb';
+import { ddc } from 'shared/dynamodb-v3';
+import type { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import * as http from 'shared/http';
+import { QueryCommand, ScanCommand } from '@aws-sdk/client-dynamodb';
 
 export const GET = async (
 	event: APIGatewayProxyEvent
@@ -16,46 +17,38 @@ export const GET = async (
 	if (err) {
 		return http.respond(event).unauthorized();
 	}
-
-	const query = await ddc
-		.query({
+	try {
+		const query = new QueryCommand({
 			TableName: 'users',
 			KeyConditionExpression: 'id = :id',
 			FilterExpression: 'contains(tables, :tableName)',
 			ExpressionAttributeValues: {
-				':id': decoded.id,
-				':tableName': tableName,
+				':id': { S: decoded.id },
+				':tableName': { S: tableName },
 			},
 			Select: 'COUNT',
-		})
-		.promise();
+		});
+		const result = await ddc.send(query);
+		if (!result.Count) {
+			return http.respond(event).text(404, 'table not found');
+		}
 
-	if (query.$response.error) {
-		return http.respond(event).error(400, query.$response.error);
-	}
-
-	if (!query.Count) {
-		return http.respond(event).text(404, 'Table not found.');
-	}
-
-	let lastEvaluatedKey: DocumentClient.Key | undefined;
-	const items = [];
-	do {
-		const get = await ddc
-			.scan({
+		let lastEvaluatedKey: DocumentClient.Key | undefined;
+		const items = [];
+		do {
+			const scan = new ScanCommand({
 				TableName: `${decoded.id}_${tableName}`,
 				Limit: 25,
 				ExclusiveStartKey: lastEvaluatedKey,
-			})
-			.promise();
-		if (get.$response.error) {
-			return http.respond(event).error(500, get.$response.error);
-		}
-		items.push(...get.Items!);
-		lastEvaluatedKey = get.LastEvaluatedKey;
-	} while (lastEvaluatedKey);
-
-	return http.respond(event).json(200, items, setCookie);
+			});
+			const result = await ddc.send(scan);
+			items.push(...result.Items!);
+			lastEvaluatedKey = result.LastEvaluatedKey;
+		} while (lastEvaluatedKey);
+		return http.respond(event).json(200, items, setCookie);
+	} catch (err) {
+		return http.respond(event).error(500, err as Error, setCookie);
+	}
 };
 
 export const handler = async (
