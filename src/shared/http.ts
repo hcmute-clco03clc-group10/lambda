@@ -87,9 +87,12 @@ const __json = (
 const __error = (
 	event: APIGatewayProxyEvent,
 	statusCode: number,
-	error: Error,
+	error: Error | string,
 	header?: Header
 ): APIGatewayProxyResult => {
+	if (typeof error === 'string') {
+		error = new Error(error);
+	}
 	return {
 		statusCode,
 		body: `${error.name}: ${error.message}`,

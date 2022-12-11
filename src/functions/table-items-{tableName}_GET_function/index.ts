@@ -1,7 +1,7 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddc } from 'shared/dynamodb-v3';
-import type { DocumentClient } from 'aws-sdk/clients/dynamodb';
+import type { AttributeValue } from '@aws-sdk/client-dynamodb';
 import * as http from 'shared/http';
 import { QueryCommand, ScanCommand } from '@aws-sdk/client-dynamodb';
 
@@ -33,7 +33,7 @@ export const GET = async (
 			return http.respond(event).text(404, 'table not found');
 		}
 
-		let lastEvaluatedKey: DocumentClient.Key | undefined;
+		let lastEvaluatedKey: Record<string, AttributeValue> | undefined;
 		const items = [];
 		do {
 			const scan = new ScanCommand({
@@ -42,6 +42,7 @@ export const GET = async (
 				ExclusiveStartKey: lastEvaluatedKey,
 			});
 			const result = await ddc.send(scan);
+			result.LastEvaluatedKey;
 			items.push(...result.Items!);
 			lastEvaluatedKey = result.LastEvaluatedKey;
 		} while (lastEvaluatedKey);

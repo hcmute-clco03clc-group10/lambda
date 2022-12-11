@@ -1,5 +1,5 @@
-import { usersSchema } from 'shared/dynamodb/users.schema';
-import { ddb } from 'shared/dynamodb';
+import { usersSchema } from 'shared/dynamodb-v3/users.schema';
+import { ddb } from 'shared/dynamodb-v3';
 
 console.log(`> create table users`);
 ddb.createTable(usersSchema, (err) => {
@@ -7,5 +7,3 @@ ddb.createTable(usersSchema, (err) => {
 		console.log(`> error: ${err.message}`);
 	}
 });
-
-

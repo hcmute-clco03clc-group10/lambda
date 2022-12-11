@@ -1,7 +1,12 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
-import { ddb, ddc } from 'shared/dynamodb';
+import { ddb, ddc } from 'shared/dynamodb-v3';
 import * as http from 'shared/http';
+import {
+	DescribeTableCommandOutput,
+	GetItemCommand,
+	GetItemCommandOutput,
+} from '@aws-sdk/client-dynamodb';
 
 export const GET = async (
 	event: APIGatewayProxyEvent
@@ -18,34 +23,36 @@ const getOne = async (event: APIGatewayProxyEvent, name: string) => {
 	if (err) {
 		return http.respond(event).unauthorized();
 	}
-	const res = await ddc
-		.get({
-			TableName: 'users',
-			Key: { id: decoded.id, email: decoded.email },
-			ProjectionExpression: 'tables',
-		})
-		.promise();
-	if (res.$response.error) {
-		return http.respond(event).error(400, res.$response.error, setCookie);
+	let result: GetItemCommandOutput;
+	try {
+		result = await ddc.send(
+			new GetItemCommand({
+				TableName: 'users',
+				Key: { id: { S: decoded.id }, email: { S: decoded.email } },
+				ProjectionExpression: 'tables',
+			})
+		);
+	} catch (error) {
+		return http.respond(event).error(400, error as Error, setCookie);
 	}
-	const tables = res.Item!.tables?.values as string[];
+
+	const tables = result.Item!.tables?.SS as string[];
 	if (!tables || !tables.includes(name)) {
 		return http.respond(event).json(200, {}, setCookie);
 	}
 
-	const result = await ddb
-		.describeTable({
+	let description: DescribeTableCommandOutput;
+	try {
+		description = await ddb.describeTable({
 			TableName: `${decoded.id}_${name}`,
-		})
-		.promise();
-	if (result.$response.error) {
-		return http.respond(event).error(502, result.$response.error);
+		});
+	} catch (error) {
+		return http.respond(event).error(500, error as Error, setCookie);
 	}
-	const table = result.Table;
+	const table = description.Table;
 	if (!table) {
 		return http.respond(event).json(200, {}, setCookie);
 	}
-
 	table.TableName = table.TableName!.substring(
 		table.TableName!.indexOf('_') + 1
 	);
@@ -57,39 +64,44 @@ const getAll = async (event: APIGatewayProxyEvent) => {
 	if (err) {
 		return http.respond(event).unauthorized();
 	}
-	const res = await ddc
-		.get({
-			TableName: 'users',
-			Key: { id: decoded.id, email: decoded.email },
-			ProjectionExpression: 'tables',
-		})
-		.promise();
-	if (res.$response.error) {
-		return http.respond(event).error(400, res.$response.error, setCookie);
+	let result: GetItemCommandOutput;
+	try {
+		result = await ddc.send(
+			new GetItemCommand({
+				TableName: 'users',
+				Key: { id: { S: decoded.id }, email: { S: decoded.email } },
+				ProjectionExpression: 'tables',
+			})
+		);
+	} catch (error) {
+		return http.respond(event).error(400, error as Error, setCookie);
 	}
-	const tables = res.Item!.tables?.values as string[];
+
+	const tables = result.Item!.tables?.SS as string[];
 	if (!tables) {
 		return http.respond(event).json(200, [], setCookie);
 	}
-
-	const results = await Promise.all(
-		tables.map((table) =>
-			ddb
-				.describeTable({
-					TableName: `${decoded.id}_${table}`,
-				})
-				.promise()
-				.then((v) => v.Table)
-		)
-	);
-	for (const result of results) {
-		if (result) {
-			result.TableName = result.TableName!.substring(
-				result.TableName!.indexOf('_') + 1
-			);
+	try {
+		const results = await Promise.all(
+			tables.map((table) =>
+				ddb
+					.describeTable({
+						TableName: `${decoded.id}_${table}`,
+					})
+					.then((v) => v.Table)
+			)
+		);
+		for (const result of results) {
+			if (result) {
+				result.TableName = result.TableName!.substring(
+					result.TableName!.indexOf('_') + 1
+				);
+			}
 		}
+		return http.respond(event).json(200, results, setCookie);
+	} catch (error) {
+		return http.respond(event).error(500, error as Error, setCookie);
 	}
-	return http.respond(event).json(200, results, setCookie);
 };
 
 export const handler = async (

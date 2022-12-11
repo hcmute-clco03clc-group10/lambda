@@ -1,6 +1,6 @@
-import * as AWS from 'aws-sdk';
+import type { CreateTableInput } from '@aws-sdk/client-dynamodb';
 
-export const usersSchema: AWS.DynamoDB.CreateTableInput = {
+export const usersSchema: CreateTableInput = {
 	TableName: 'users',
 	KeySchema: [
 		{ AttributeName: 'id', KeyType: 'HASH' },
@@ -14,16 +14,18 @@ export const usersSchema: AWS.DynamoDB.CreateTableInput = {
 		{
 			IndexName: 'emailIndex',
 			KeySchema: [{ AttributeName: 'email', KeyType: 'HASH' }],
-			ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
+			ProvisionedThroughput: {
+				ReadCapacityUnits: 5,
+				WriteCapacityUnits: 5,
+			},
 			Projection: {
 				ProjectionType: 'INCLUDE',
-				NonKeyAttributes: [ 'id', 'password', 'salt' ]
-			}
-		}
+				NonKeyAttributes: ['id', 'password', 'salt'],
+			},
+		},
 	],
 	ProvisionedThroughput: {
 		ReadCapacityUnits: 5,
 		WriteCapacityUnits: 5,
 	},
 };
-
