@@ -10,7 +10,6 @@ type MultiValueHeader = Omit<
 >;
 
 const corsHeaders = {
-	'Access-Control-Allow-Origin': 'http://127.0.0.1:5173',
 	'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
 	'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
 	'Access-Control-Allow-Credentials': 'true',
