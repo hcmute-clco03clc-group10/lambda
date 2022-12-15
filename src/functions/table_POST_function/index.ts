@@ -8,7 +8,7 @@ import {
 	UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb';
 
-export const PUT = async (
+export const POST = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
 	if (!event.body) {
@@ -101,5 +101,5 @@ export const PUT = async (
 export const handler = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-	return PUT(event);
+	return POST(event);
 };
