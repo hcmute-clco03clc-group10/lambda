@@ -38,6 +38,7 @@ require('esbuild')
 		entryPoints: readRecursively(path.resolve(__dirname, 'src')),
 		external: [
 			'aws-sdk',
+			'aws-lambda',
 			'nock',
 			'mock-aws-s3',
 			'@aws-sdk/client-dynamodb',
