@@ -2,7 +2,10 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { verifyAccessTokenOrResign } from 'shared/token';
 import { ddc } from 'shared/dynamodb-v3';
 import * as http from 'shared/http';
-import { DeleteTableCommand } from '@aws-sdk/client-dynamodb';
+import {
+	DeleteTableCommand,
+	UpdateItemCommand,
+} from '@aws-sdk/client-dynamodb';
 
 export const POST = async (
 	event: APIGatewayProxyEvent
@@ -26,16 +29,28 @@ export const POST = async (
 	}
 
 	try {
-		const results = await Promise.allSettled(
-			data.map((name) =>
-				ddc.send(
-					new DeleteTableCommand({
-						TableName: `${decoded.id}_${name}`,
-					})
+		const [update, deletes] = await Promise.all([
+			ddc.send(
+				new UpdateItemCommand({
+					TableName: 'users',
+					Key: { id: { S: decoded.id }, email: { S: decoded.email } },
+					UpdateExpression: 'DELETE tables :tables',
+					ExpressionAttributeValues: {
+						':tables': { SS: data },
+					},
+				})
+			),
+			Promise.allSettled(
+				data.map((name) =>
+					ddc.send(
+						new DeleteTableCommand({
+							TableName: `${decoded.id}_${name}`,
+						})
+					)
 				)
-			)
-		);
-		const fulfilled = results.filter(
+			),
+		]);
+		const fulfilled = deletes.filter(
 			(result) => result.status === 'fulfilled'
 		);
 		return http
