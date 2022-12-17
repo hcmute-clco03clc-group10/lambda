@@ -21,7 +21,7 @@ export const GET = async (
 		return http.respond(event).unauthorized();
 	}
 
-	const body = Buffer.from(base64Body, 'base64').toString('ascii');
+	const body = Buffer.from(base64Body, 'base64url').toString('ascii');
 	let data: Record<string, AttributeValue>;
 	try {
 		data = JSON.parse(body);
