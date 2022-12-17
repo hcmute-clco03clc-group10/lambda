@@ -5,13 +5,7 @@ import * as http from 'shared/http';
 const DELETE = async (
 	event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-	const [err, decoded] = await verifyRefreshToken(
-		extractToken(event, 'refreshToken')
-	);
-	if (err) {
-		return http.respond(event).error(400, err);
-	}
-	return http.respond(event).json(200, decoded, {
+	return http.respond(event).text(200, '', {
 		'Set-Cookie': [
 			'accessToken=; SameSite=None; Secure',
 			'refreshToken=; SameSite=None; Secure',
