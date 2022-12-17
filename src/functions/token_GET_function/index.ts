@@ -16,14 +16,21 @@ const GET = async (
 	if (err) {
 		return http.respond(event).error(400, err);
 	}
-	return http.respond(event).json(200, decoded, {
-		'Set-Cookie': `accessToken=${makeAccessToken(
-			makeProjectedPayload(decoded)
-		)}; SameSite=None; Secure`,
-		HttpOnly: true,
-		Secure: true,
-		Path: '/',
-	});
+	const accessToken = makeAccessToken(makeProjectedPayload(decoded));
+	return http.respond(event).json(
+		200,
+		{
+			id: decoded.id,
+			email: decoded.email,
+			accessToken,
+		},
+		{
+			'Set-Cookie': `accessToken=${accessToken}; SameSite=None; Secure`,
+			HttpOnly: true,
+			Secure: true,
+			Path: '/',
+		}
+	);
 };
 
 export const handler = async (

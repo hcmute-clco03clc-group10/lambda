@@ -90,7 +90,7 @@ export const extractToken = (
 	event: APIGatewayProxyEvent,
 	key: 'refreshToken' | 'accessToken'
 ) => {
-	let token = event.headers.authorization;
+	let token = event.headers.Authorization;
 	if (!token) {
 		const cookie = event.headers.cookie;
 		if (cookie) {

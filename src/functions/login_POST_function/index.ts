@@ -52,16 +52,23 @@ const POST = async (
 		const refreshToken = makeRefreshToken(payload);
 		const accessToken = makeAccessToken(payload);
 
-		return http.respond(event).text(200, `Logged in successfully`, {
-			HttpOnly: true,
-			Secure: true,
-			Path: '/',
-			'Content-Type': 'text/plain',
-			'Set-Cookie': [
-				`refreshToken=${refreshToken}; SameSite=None; Secure`,
-				`accessToken=${accessToken}; SameSite=None; Secure`,
-			],
-		});
+		return http.respond(event).json(
+			200,
+			{
+				refreshToken,
+				accessToken,
+			},
+			{
+				HttpOnly: true,
+				Secure: true,
+				Path: '/',
+				'Content-Type': 'text/plain',
+				'Set-Cookie': [
+					`refreshToken=${refreshToken}; SameSite=None; Secure`,
+					`accessToken=${accessToken}; SameSite=None; Secure`,
+				],
+			}
+		);
 	} catch (err) {
 		return http.respond(event).error(500, err as Error);
 	}
